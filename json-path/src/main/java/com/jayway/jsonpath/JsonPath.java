@@ -204,22 +204,10 @@ public class JsonPath {
             }
           }
         } catch (RuntimeException e) {
-            if (!optSuppressExceptions) {
-                throw e;
-            } else {
-                if (optAsPathList) {
-                    return (T) configuration.jsonProvider().createArray();
-                } else {
-                    if (optAlwaysReturnList) {
-                        return (T) configuration.jsonProvider().createArray();
-                    } else {
-                        return (T) (path.isDefinite() ? null : configuration.jsonProvider().createArray());
-                    }
-                }
-            }
+            return handleFailure(configuration, optAsPathList, optAlwaysReturnList,
+                optSuppressExceptions, e);
         }
     }
-
 
     private <T> T handleResult(Configuration configuration, boolean optAsPathList,
         boolean optAlwaysReturnList, boolean optSuppressExceptions, EvalResult<T> evalResult) {
