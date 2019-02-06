@@ -193,8 +193,7 @@ public class JsonPath {
                 .getValue2(false);
             if(!evalResult.isPathPresent()) {
               return handleFailure(configuration, optAsPathList,
-                  optAlwaysReturnList, optSuppressExceptions,
-                  new PathNotFoundException("No results for path: " + path.toString()));
+                  optAlwaysReturnList, optSuppressExceptions, null);
             } else if (optAlwaysReturnList && path.isDefinite()) {
               Object array = configuration.jsonProvider().createArray();
               configuration.jsonProvider().setArrayIndex(array, 0, evalResult.getResult());
@@ -224,7 +223,11 @@ public class JsonPath {
     private <T> T handleFailure(Configuration configuration, boolean optAsPathList,
         boolean optAlwaysReturnList, boolean optSuppressExceptions, RuntimeException e) {
       if (!optSuppressExceptions) {
-        throw e;
+          if(e == null) {
+              throw new PathNotFoundException("No results for path: " + path.toString());
+          } else {
+              throw e;
+          }
       } else {
         if (optAsPathList) {
           return (T) configuration.jsonProvider().createArray();
