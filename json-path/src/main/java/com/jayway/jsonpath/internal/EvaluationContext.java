@@ -16,8 +16,10 @@ package com.jayway.jsonpath.internal;
 
 import com.jayway.jsonpath.Configuration;
 
+import com.jayway.jsonpath.internal.path.EvalResult;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface EvaluationContext {
 
@@ -43,6 +45,8 @@ public interface EvaluationContext {
      */
     <T> T getValue();
 
+    <T> EvalResult<T> getValue2();
+
     /**
      * See {@link com.jayway.jsonpath.internal.EvaluationContext#getValue()}
      *
@@ -52,14 +56,16 @@ public interface EvaluationContext {
      */
     <T> T getValue(boolean unwrap);
 
+    <T> EvalResult<T> getValue2(boolean unwrap);
 
     /**
      * Returns the list of formalized paths that represent the result of the evaluation
-     * @param <T>
+     * @param <T> expected return type
      * @return list of paths
      */
     <T> T getPath();
 
+    <T> EvalResult<T> getPath2();
 
     /**
      * Convenience method to get list of hits as String path representations

@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.jayway.jsonpath.internal.Utils.notNull;
@@ -118,37 +119,58 @@ public class EvaluationContextImpl implements EvaluationContext {
         return Collections.unmodifiableCollection(updateOperations);
     }
 
-
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T getValue() {
         return getValue(true);
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public <T> EvalResult<T> getValue2() {
+        return getValue2(true);
+    }
+
     @Override
     public <T> T getValue(boolean unwrap) {
+        EvalResult<T> evalResult = getValue2(unwrap);
+        if(!evalResult.isPathPresent()) {
+            throw new PathNotFoundException("No results for path: " + path.toString());
+        }
+        return evalResult.getResult();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> EvalResult<T> getValue2(boolean unwrap) {
         if (path.isDefinite()) {
             if(resultIndex == 0){
-                throw new PathNotFoundException("No results for path: " + path.toString());
+                return new EvalResult<>(null, false);
             }
             int len = jsonProvider().length(valueResult);
             Object value = (len > 0) ? jsonProvider().getArrayIndex(valueResult, len-1) : null;
             if (value != null && unwrap){
               value = jsonProvider().unwrap(value);
             }
-            return (T) value;
+            return new EvalResult<>((T) value, true);
         }
-        return (T)valueResult;
+        return new EvalResult<>((T)valueResult, true);
+    }
+
+    @Override
+    public <T> T getPath() {
+        EvalResult<T> evalResult = getPath2();
+        if(!evalResult.isPathPresent()) {
+            throw new PathNotFoundException("No results for path: " + path.toString());
+        }
+        return evalResult.getResult();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getPath() {
+    public <T> EvalResult<T> getPath2() {
         if(resultIndex == 0){
-            throw new PathNotFoundException("No results for path: " + path.toString());
+            return new EvalResult<>(null, false);
         }
-        return (T)pathResult;
+        return new EvalResult<>((T)pathResult, true);
     }
 
     @Override
