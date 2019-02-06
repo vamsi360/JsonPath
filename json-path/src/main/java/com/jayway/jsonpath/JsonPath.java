@@ -20,6 +20,7 @@ import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.internal.Path;
 import com.jayway.jsonpath.internal.PathRef;
 import com.jayway.jsonpath.internal.Utils;
+import com.jayway.jsonpath.internal.path.EvalResult;
 import com.jayway.jsonpath.internal.path.PathCompiler;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 
@@ -174,25 +175,34 @@ public class JsonPath {
         boolean optSuppressExceptions = configuration.containsOption(Option.SUPPRESS_EXCEPTIONS);
 
         try {
-            if (path.isFunctionPath()) {
-                if (optAsPathList || optAlwaysReturnList) {
-                    throw new JsonPathException("Options " + AS_PATH_LIST + " and " + ALWAYS_RETURN_LIST + " are not allowed when using path functions!");
-                }
-                return path.evaluate(jsonObject, jsonObject, configuration).getValue(true);
-
-            } else if (optAsPathList) {
-                return (T) path.evaluate(jsonObject, jsonObject, configuration).getPath();
-
-            } else {
-                Object res = path.evaluate(jsonObject, jsonObject, configuration).getValue(false);
-                if (optAlwaysReturnList && path.isDefinite()) {
-                    Object array = configuration.jsonProvider().createArray();
-                    configuration.jsonProvider().setArrayIndex(array, 0, res);
-                    return (T) array;
-                } else {
-                    return (T) res;
-                }
+          if (path.isFunctionPath()) {
+            if (optAsPathList || optAlwaysReturnList) {
+              throw new JsonPathException("Options " + AS_PATH_LIST + " and " + ALWAYS_RETURN_LIST
+                  + " are not allowed when using path functions!");
             }
+            EvalResult<T> evalResult = path.evaluate(jsonObject, jsonObject, configuration)
+                .getValue2(true);
+            return handleResult(configuration, optAsPathList, optAlwaysReturnList,
+                optSuppressExceptions, evalResult);
+          } else if (optAsPathList) {
+            EvalResult<T> evalResult = path.evaluate(jsonObject, jsonObject, configuration).getPath2();
+            return handleResult(configuration, optAsPathList, optAlwaysReturnList,
+                optSuppressExceptions, evalResult);
+          } else {
+            EvalResult<Object> evalResult = path.evaluate(jsonObject, jsonObject, configuration)
+                .getValue2(false);
+            if(!evalResult.isPathPresent()) {
+              return handleFailure(configuration, optAsPathList,
+                  optAlwaysReturnList, optSuppressExceptions,
+                  new PathNotFoundException("No results for path: " + path.toString()));
+            } else if (optAlwaysReturnList && path.isDefinite()) {
+              Object array = configuration.jsonProvider().createArray();
+              configuration.jsonProvider().setArrayIndex(array, 0, evalResult.getResult());
+              return (T) array;
+            } else {
+              return (T) evalResult.getResult();
+            }
+          }
         } catch (RuntimeException e) {
             if (!optSuppressExceptions) {
                 throw e;
@@ -208,6 +218,36 @@ public class JsonPath {
                 }
             }
         }
+    }
+
+
+    private <T> T handleResult(Configuration configuration, boolean optAsPathList,
+        boolean optAlwaysReturnList, boolean optSuppressExceptions, EvalResult<T> evalResult) {
+      if (evalResult.isPathPresent()) {
+        return evalResult.getResult();
+      } else {
+        return handleFailure(configuration, optAsPathList,
+            optAlwaysReturnList, optSuppressExceptions,
+            new PathNotFoundException("No results for path: " + path.toString()));
+      }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T handleFailure(Configuration configuration, boolean optAsPathList,
+        boolean optAlwaysReturnList, boolean optSuppressExceptions, RuntimeException e) {
+      if (!optSuppressExceptions) {
+        throw e;
+      } else {
+        if (optAsPathList) {
+          return (T) configuration.jsonProvider().createArray();
+        } else {
+          if (optAlwaysReturnList) {
+            return (T) configuration.jsonProvider().createArray();
+          } else {
+            return (T) (path.isDefinite() ? null : configuration.jsonProvider().createArray());
+          }
+        }
+      }
     }
 
     /**
