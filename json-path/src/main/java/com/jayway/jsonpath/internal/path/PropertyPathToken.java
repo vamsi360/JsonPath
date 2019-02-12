@@ -59,25 +59,31 @@ class PropertyPathToken extends PathToken {
 
     @Override
     public void evaluate(String currentPath, PathRef parent, Object model, EvaluationContextImpl ctx) {
+        EvalResult<Void> evalResult = evaluate2(currentPath, parent, model, ctx);
+        if(!evalResult.isPathPresent()) {
+            String m = model == null ? "null" : model.getClass().getName();
+            throw new PathNotFoundException(String.format(
+                "Expected to find an object with property %s in path %s but found '%s'. " +
+                    "This is not a json object according to the JsonProvider: '%s'.",
+                getPathFragment(), currentPath, m, ctx.configuration().jsonProvider().getClass().getName()));
+        }
+    }
+
+    @Override
+    public EvalResult<Void> evaluate2(String currentPath, PathRef parent, Object model, EvaluationContextImpl ctx) {
         // Can't assert it in ctor because isLeaf() could be changed later on.
         assert onlyOneIsTrueNonThrow(singlePropertyCase(), multiPropertyMergeCase(), multiPropertyIterationCase());
-
         if (!ctx.jsonProvider().isMap(model)) {
             if (! isUpstreamDefinite()) {
-                return;
+                return new EvalResult<>(null, true);
             } else {
-                String m = model == null ? "null" : model.getClass().getName();
-
-                throw new PathNotFoundException(String.format(
-                        "Expected to find an object with property %s in path %s but found '%s'. " +
-                        "This is not a json object according to the JsonProvider: '%s'.",
-                        getPathFragment(), currentPath, m, ctx.configuration().jsonProvider().getClass().getName()));
+                return new EvalResult<>(null, false);
             }
         }
 
         if (singlePropertyCase() || multiPropertyMergeCase()) {
             handleObjectProperty(currentPath, model, ctx, properties);
-            return;
+            return new EvalResult<>(null, true);
         }
 
         assert multiPropertyIterationCase();
@@ -87,6 +93,8 @@ class PropertyPathToken extends PathToken {
             currentlyHandledProperty.set(0, property);
             handleObjectProperty(currentPath, model, ctx, currentlyHandledProperty);
         }
+
+        return new EvalResult<>(null, true);
     }
 
     @Override

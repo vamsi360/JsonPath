@@ -211,6 +211,15 @@ public abstract class PathToken {
 
     public abstract void evaluate(String currentPath, PathRef parent,  Object model, EvaluationContextImpl ctx);
 
+    public EvalResult<Void> evaluate2(String currentPath, PathRef parent,  Object model, EvaluationContextImpl ctx) {
+        try {
+            evaluate(currentPath, parent, model, ctx);
+            return new EvalResult<>(null, true);
+        } catch (PathNotFoundException ex) {
+            return new EvalResult<>(null, false);
+        }
+    }
+
     public abstract boolean isTokenDefinite();
 
     protected abstract String getPathFragment();
