@@ -15,6 +15,7 @@
 package com.jayway.jsonpath.internal.path;
 
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.EvaluationAbortException;
 import com.jayway.jsonpath.internal.EvaluationContext;
 import com.jayway.jsonpath.internal.Path;
@@ -103,8 +104,29 @@ public class CompiledPath implements Path {
     }
 
     @Override
+    public ContextWithEvalResult evaluate2(Object document, Object rootDocument, Configuration configuration, boolean forUpdate) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Evaluating path: {}", toString());
+        }
+
+        EvaluationContextImpl ctx = new EvaluationContextImpl(this, rootDocument, configuration, forUpdate);
+        try {
+            PathRef op = ctx.forUpdate() ?  PathRef.createRoot(rootDocument) : PathRef.NO_OP;
+            EvalResult<Void> evalResult = root.evaluate2("", op, document, ctx);
+            return new ContextWithEvalResult<Void>(ctx, evalResult);
+        } catch (EvaluationAbortException abort) {}
+
+        return new ContextWithEvalResult<Void>(ctx, null);
+    }
+
+    @Override
     public EvaluationContext evaluate(Object document, Object rootDocument, Configuration configuration){
         return evaluate(document, rootDocument, configuration, false);
+    }
+
+    @Override
+    public ContextWithEvalResult evaluate2(Object document, Object rootDocument, Configuration configuration) {
+        return evaluate2(document, rootDocument, configuration, false);
     }
 
     @Override

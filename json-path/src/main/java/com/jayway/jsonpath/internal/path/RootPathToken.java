@@ -64,6 +64,17 @@ public class RootPathToken extends PathToken {
     }
 
     @Override
+    public EvalResult<Void> evaluate2(String currentPath, PathRef pathRef, Object model, EvaluationContextImpl ctx) {
+        if (isLeaf()) {
+            PathRef op = ctx.forUpdate() ?  pathRef : PathRef.NO_OP;
+            ctx.addResult(rootToken, op, model);
+            return new EvalResult<>(null, true);
+        } else {
+            return next().evaluate2(rootToken, pathRef, model, ctx);
+        }
+    }
+
+    @Override
     public String getPathFragment() {
         return rootToken;
     }

@@ -20,6 +20,7 @@ import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.internal.Path;
 import com.jayway.jsonpath.internal.PathRef;
 import com.jayway.jsonpath.internal.Utils;
+import com.jayway.jsonpath.internal.path.ContextWithEvalResult;
 import com.jayway.jsonpath.internal.path.EvalResult;
 import com.jayway.jsonpath.internal.path.PathCompiler;
 import com.jayway.jsonpath.spi.json.JsonProvider;
@@ -180,8 +181,7 @@ public class JsonPath {
               throw new JsonPathException("Options " + AS_PATH_LIST + " and " + ALWAYS_RETURN_LIST
                   + " are not allowed when using path functions!");
             }
-            EvalResult<T> evalResult = path.evaluate(jsonObject, jsonObject, configuration)
-                .getValue2(true);
+            EvalResult<T> evalResult = path.evaluate(jsonObject, jsonObject, configuration).getValue2(true);
             return handleResult(configuration, optAsPathList, optAlwaysReturnList,
                 optSuppressExceptions, evalResult);
           } else if (optAsPathList) {
@@ -189,8 +189,14 @@ public class JsonPath {
             return handleResult(configuration, optAsPathList, optAlwaysReturnList,
                 optSuppressExceptions, evalResult);
           } else {
-            EvalResult<Object> evalResult = path.evaluate(jsonObject, jsonObject, configuration)
-                .getValue2(false);
+              ContextWithEvalResult contextWithEvalResult = path.evaluate2(jsonObject, jsonObject, configuration);
+              if(contextWithEvalResult.getEvalResult() != null) {
+                  if(!contextWithEvalResult.getEvalResult().isPathPresent()) {
+                      return handleFailure(configuration, optAsPathList,
+                          optAlwaysReturnList, optSuppressExceptions, null);
+                  }
+              }
+              EvalResult<Object> evalResult = contextWithEvalResult.getEvaluationContext().getValue2(false);
             if(!evalResult.isPathPresent()) {
               return handleFailure(configuration, optAsPathList,
                   optAlwaysReturnList, optSuppressExceptions, null);

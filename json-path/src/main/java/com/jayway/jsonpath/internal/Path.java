@@ -15,6 +15,7 @@
 package com.jayway.jsonpath.internal;
 
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.internal.path.ContextWithEvalResult;
 
 /**
  *
@@ -32,6 +33,8 @@ public interface Path {
      */
     EvaluationContext evaluate(Object document, Object rootDocument, Configuration configuration);
 
+    ContextWithEvalResult evaluate2(Object document, Object rootDocument, Configuration configuration);
+
     /**
      * Evaluates this path
      *
@@ -42,6 +45,8 @@ public interface Path {
      * @return EvaluationContext containing results of evaluation
      */
     EvaluationContext evaluate(Object document, Object rootDocument, Configuration configuration, boolean forUpdate);
+
+    ContextWithEvalResult evaluate2(Object document, Object rootDocument, Configuration configuration, boolean forUpdate);
 
     /**
      *
