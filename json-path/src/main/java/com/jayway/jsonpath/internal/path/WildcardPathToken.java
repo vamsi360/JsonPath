@@ -34,7 +34,11 @@ public class WildcardPathToken extends PathToken {
     public void evaluate(String currentPath, PathRef parent, Object model, EvaluationContextImpl ctx) {
         if (ctx.jsonProvider().isMap(model)) {
             for (String property : ctx.jsonProvider().getPropertyKeys(model)) {
-                handleObjectProperty(currentPath, model, ctx, Collections.singletonList(property));
+                EvalResult<Void> evalResult = handleObjectProperty(currentPath, model, ctx,
+                    Collections.singletonList(property));
+                if(!evalResult.isPathPresent()) {
+                    throw new PathNotFoundException();
+                }
             }
         } else if (ctx.jsonProvider().isArray(model)) {
             for (int idx = 0; idx < ctx.jsonProvider().length(model); idx++) {

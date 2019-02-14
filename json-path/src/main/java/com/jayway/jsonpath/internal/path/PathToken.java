@@ -36,7 +36,7 @@ public abstract class PathToken {
         return next;
     }
 
-    void handleObjectProperty(String currentPath, Object model, EvaluationContextImpl ctx, List<String> properties) {
+    EvalResult<Void> handleObjectProperty(String currentPath, Object model, EvaluationContextImpl ctx, List<String> properties) {
 
         if(properties.size() == 1) {
             String property = properties.get(0);
@@ -55,9 +55,10 @@ public abstract class PathToken {
                     } else {
                         if(ctx.options().contains(Option.SUPPRESS_EXCEPTIONS) ||
                            !ctx.options().contains(Option.REQUIRE_PROPERTIES)){
-                            return;
+                            return new EvalResult<>(null, true);
                         } else {
-                            throw new PathNotFoundException("No results for path: " + evalPath);
+                            //throw new PathNotFoundException("No results for path: " + evalPath);
+                            return new EvalResult<>(null, false);
                         }
                     }
                 } else {
@@ -67,9 +68,10 @@ public abstract class PathToken {
                         // If there is some indefiniteness in the path and properties are not required - we'll ignore
                         // absent property. And also in case of exception suppression - so that other path evaluation
                         // branches could be examined.
-                        return;
+                        return new EvalResult<>(null, true);
                     } else {
-                        throw new PathNotFoundException("Missing property in path " + evalPath);
+                        //throw new PathNotFoundException("Missing property in path " + evalPath);
+                        return new EvalResult<>(null, false);
                     }
                 }
             }
@@ -111,6 +113,7 @@ public abstract class PathToken {
             PathRef pathRef = ctx.forUpdate() ? PathRef.create(model, properties) : PathRef.NO_OP;
             ctx.addResult(evalPath, pathRef, merged);
         }
+        return new EvalResult<>(null, true);
     }
 
     private static boolean hasProperty(String property, Object model, EvaluationContextImpl ctx) {

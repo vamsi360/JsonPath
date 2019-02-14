@@ -82,8 +82,8 @@ class PropertyPathToken extends PathToken {
         }
 
         if (singlePropertyCase() || multiPropertyMergeCase()) {
-            handleObjectProperty(currentPath, model, ctx, properties);
-            return new EvalResult<>(null, true);
+            return handleObjectProperty(currentPath, model, ctx, properties);
+            //return new EvalResult<>(null, true);
         }
 
         assert multiPropertyIterationCase();
@@ -91,7 +91,10 @@ class PropertyPathToken extends PathToken {
         currentlyHandledProperty.add(null);
         for (final String property : properties) {
             currentlyHandledProperty.set(0, property);
-            handleObjectProperty(currentPath, model, ctx, currentlyHandledProperty);
+            EvalResult<Void> evalResult = handleObjectProperty(currentPath, model, ctx, currentlyHandledProperty);
+            if(!evalResult.isPathPresent()) {
+                return evalResult;
+            }
         }
 
         return new EvalResult<>(null, true);
