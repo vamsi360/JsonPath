@@ -80,7 +80,7 @@ public abstract class PathToken {
                 ctx.addResult(evalPath, pathRef, propertyVal);
             }
             else {
-                next().evaluate(evalPath, pathRef, propertyVal, ctx);
+                return next().evaluate2(evalPath, pathRef, propertyVal, ctx);
             }
         } else {
             String evalPath = currentPath + "[" + Utils.join(", ", "'", properties) + "]";
